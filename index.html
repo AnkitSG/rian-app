@@ -1,0 +1,87 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2685.3">
+  <style type="text/css">
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
+    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
+  </style>
+</head>
+<body>
+<p class="p1">import { useState, useEffect } from 'react';</p>
+<p class="p2"><br></p>
+<p class="p1">export default function App() {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [showSparkles, setShowSparkles] = useState(false);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const [bounce, setBounce] = useState(false);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>useEffect(() =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>setShowSparkles(true);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const interval = setInterval(() =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>setBounce(b =&gt; !b);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}, 2000);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>return () =&gt; clearInterval(interval);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}, []);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>const sparkles = ['✨', '⭐', '🌟', '💫'];</p>
+<p class="p2"><span class="Apple-converted-space">  </span></p>
+<p class="p1"><span class="Apple-converted-space">  </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div className="min-h-screen bg-gradient-to-b from-blue-400 via-purple-400 to-pink-400 flex flex-col items-center justify-center p-6"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{/* Floating decorations */}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div className="absolute top-10 left-10 text-4xl animate-bounce"&gt;🚀&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div className="absolute top-20 right-10 text-4xl animate-pulse"&gt;🌈&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div className="absolute bottom-20 left-10 text-4xl animate-bounce"&gt;🎈&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div className="absolute bottom-10 right-10 text-4xl animate-pulse"&gt;🦋&lt;/div&gt;</p>
+<p class="p2"><span class="Apple-converted-space">      </span></p>
+<p class="p1"><span class="Apple-converted-space">      </span>{/* Main card */}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div className="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center transform hover:scale-105 transition-transform duration-300"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>{/* Sparkles */}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div className="flex justify-center gap-2 mb-4 text-2xl"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{sparkles.map((s, i) =&gt; (</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;span key={i} className="animate-pulse" style={{animationDelay: `${i * 0.2}s`}}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>{s}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>))}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p2"><span class="Apple-converted-space">        </span></p>
+<p class="p1"><span class="Apple-converted-space">        </span>{/* Welcome text */}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;h1 className="text-3xl font-bold text-purple-600 mb-2"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>Welcome</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/h1&gt;</p>
+<p class="p2"><span class="Apple-converted-space">        </span></p>
+<p class="p1"><span class="Apple-converted-space">        </span>{/* Name with fun styling */}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div className={`text-5xl font-bold bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent mb-4 ${bounce ? 'scale-110' : 'scale-100'} transition-transform duration-500`}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>RIAN! 🎉</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p2"><span class="Apple-converted-space">        </span></p>
+<p class="p1"><span class="Apple-converted-space">        </span>{/* Cute message */}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;p className="text-gray-600 text-lg mb-6"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>Let's learn and have fun together!</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/p&gt;</p>
+<p class="p2"><span class="Apple-converted-space">        </span></p>
+<p class="p1"><span class="Apple-converted-space">        </span>{/* Fun icons row */}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div className="flex justify-center gap-4 text-3xl mb-6"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;span className="hover:scale-125 transition-transform cursor-pointer"&gt;🔢&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;span className="hover:scale-125 transition-transform cursor-pointer"&gt;🔬&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;span className="hover:scale-125 transition-transform cursor-pointer"&gt;📚&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;span className="hover:scale-125 transition-transform cursor-pointer"&gt;🎨&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p2"><span class="Apple-converted-space">        </span></p>
+<p class="p1"><span class="Apple-converted-space">        </span>{/* Coming soon badge */}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white rounded-full py-2 px-6 inline-block font-semibold"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>🚧 Fun lessons coming soon!</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p2"><span class="Apple-converted-space">      </span></p>
+<p class="p1"><span class="Apple-converted-space">      </span>{/* Bottom message */}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;p className="mt-8 text-white text-lg font-medium drop-shadow-lg"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>Made with 💜 for Rian</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>);</p>
+<p class="p1">}</p>
+</body>
+</html>
