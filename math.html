@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Math Fun! - Rian's Learning</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="min-h-screen bg-gradient-to-b from-blue-400 to-indigo-600">
+  <div id="app"></div>
+
+  <script>
+    let currentGame = 'menu';
+    let score = 0;
+    let level = 1;
+    let problem = null;
+    let usedProblems = [];
+    let missedProblems = [];
+
+    // Speak function
+    function speak(text, rate = 0.85) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(String(text));
+        u.rate = rate; u.pitch = 1.1; u.lang = 'en-US';
+        window.speechSynthesis.speak(u);
+      }
+    }
+
+    // Celebrate correct answer
+    function celebrate() {
+      const phrases = ['Great job!', 'Awesome!', 'You did it!', 'Super!', 'Amazing!', 'Fantastic!'];
+      speak(phrases[Math.floor(Math.random() * phrases.length)], 1);
+      score++;
+      showConfetti();
+    }
+
+    // Wrong answer
+    function tryAgain() {
+      speak('Try again!', 1);
+      if (problem) missedProblems.push({...problem});
+    }
+
+    // Confetti animation
+    function showConfetti() {
+      const c = document.getElementById('confetti');
+      if (!c) return;
+      const emojis = ['🌟','⭐','🎉','✨','🎊','💫','🏆'];
+      c.innerHTML = emojis.map((e, i) => 
+        `<span class="confetti-piece" style="left:${10 + i * 12}%;animation-delay:${i * 0.1}s">${e}</span>`
+      ).join('');
+      setTimeout(() => c.innerHTML = '', 1500);
+    }
+
+    // Generate unique addition problem
+    function generateAddition() {
+      let a, b, key;
+      let attempts = 0;
+      do {
+        // Difficulty based on level
+        const max = Math.min(5 + level * 2, 15);
+        a = Math.floor(Math.random() * max) + 1;
+        b = Math.floor(Math.random() * max) + 1;
+        key = `${Math.min(a,b)}+${Math.max(a,b)}`;
+        attempts++;
+      } while (usedProblems.includes(key) && attempts < 20);
+      
+      usedProblems.push(key);
+      if (usedProblems.length > 30) usedProblems = usedProblems.slice(-15);
+      
+      const answer = a + b;
+      const options = [answer];
+      while (options.length < 3) {
+        const wrong = answer + (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random() * 4) + 1);
+        if (wrong > 0 && wrong <= 30 && !options.includes(wrong)) options.push(wrong);
+      }
+      problem = { a, b, answer, options: options.sort(() => Math.random() - 0.5), type: 'add' };
+    }
+
+    // Generate unique subtraction problem
+    function generateSubtraction() {
+      let a, b, key;
+      let attempts = 0;
+      do {
+        const max = Math.min(8 + level * 2, 20);
+        a = Math.floor(Math.random() * max) + 3;
+        b = Math.floor(Math.random() * Math.min(a - 1, 10)) + 1;
+        key = `${a}-${b}`;
+        attempts++;
+      } while (usedProblems.includes(key) && attempts < 20);
+      
+      usedProblems.push(key);
+      if (usedProblems.length > 30) usedProblems = usedProblems.slice(-15);
+      
+      const answer = a - b;
+      const options = [answer];
+      while (options.length < 3) {
+        const wrong = answer + (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random() * 3) + 1);
+        if (wrong >= 0 && wrong <= 20 && !options.includes(wrong)) options.push(wrong);
+      }
+      problem = { a, b, answer, options: options.sort(() => Math.random() - 0.5), type: 'sub' };
+    }
+
+    // Check answer
+    function checkAnswer(selected) {
+      const btns = document.querySelectorAll('.answer-btn');
+      if (selected === problem.answer) {
+        btns.forEach(b => {
+          if (parseInt(b.dataset.val) === selected) b.classList.add('correct-answer');
+        });
+        celebrate();
+        if (score % 5 === 0) level = Math.min(level + 1, 5);
+        setTimeout(() => {
+          if (problem.type === 'add') generateAddition();
+          else generateSubtraction();
+          render();
+        }, 1800);
+      } else {
+        btns.forEach(b => {
+          if (parseInt(b.dataset.val) === selected) b.classList.add('wrong-answer');
+        });
+        tryAgain();
+      }
+    }
+
+    // Speak number when tapped
+    function speakNumber(n) {
+      speak(n, 0.9);
+      const btn = document.getElementById('num-' + n);
+      if (btn) {
+        btn.classList.add('pop');
+        setTimeout(() => btn.classList.remove('pop'), 400);
+      }
+    }
+
+    // Navigation
+    function goMenu() { currentGame = 'menu'; render(); }
+    function startCounting() { currentGame = 'counting'; render(); }
+    function startAddition() { generateAddition(); currentGame = 'addition'; render(); }
+    function startSubtraction() { generateSubtraction(); currentGame = 'subtraction'; render(); }
+
+    // Create visual objects for math
+    function createVisualObjects(count, emoji, isSecond = false) {
+      let html = '<div class="flex flex-wrap justify-center gap-2 mb-2">';
+      for (let i = 0; i < count; i++) {
+        const delay = isSecond ? (i + 5) * 0.1 : i * 0.1;
+        html += `<span class="text-4xl object-pop" style="animation-delay:${delay}s">${emoji}</span>`;
+      }
+      html += '</div>';
+      return html;
+    }
+
+    function render() {
+      const app = document.getElementById('app');
+      let html = '';
+
+      if (currentGame === 'menu') {
+        html = `
+          <div class="min-h-screen flex flex-col items-center justify-center p-4">
+            <a href="index.html" class="absolute top-4 left-4 bg-white/30 text-white rounded-full w-12 h-12 flex items-center justify-center text-2xl btn-bounce no-underline">←</a>
+            
+            <div class="bg-white rounded-3xl shadow-2xl p-6 max-w-sm w-full text-center">
+              <div class="text-6xl mb-3">🔢</div>
+              <h1 class="text-3xl font-bold text-blue-600 mb-2">Math Fun!</h1>
+              <p class="text-gray-500 mb-6">Choose a game to play</p>
+              
+              <div class="space-y-4">
+                <button onclick="startCounting()" class="btn-bounce w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-2xl p-5 shadow-lg flex items-center gap-4">
+                  <span class="text-5xl">🔢</span>
+                  <div class="text-left">
+                    <div class="font-bold text-xl">Count 1-50</div>
+                    <div class="text-sm opacity-90">Tap numbers to hear them!</div>
+                  </div>
+                </button>
+                
+                <button onclick="startAddition()" class="btn-bounce w-full bg-gradient-to-r from-green-400 to-emerald-500 text-white rounded-2xl p-5 shadow-lg flex items-center gap-4">
+                  <span class="text-5xl">➕</span>
+                  <div class="text-left">
+                    <div class="font-bold text-xl">Addition</div>
+                    <div class="text-sm opacity-90">Add fun things together!</div>
+                  </div>
+                </button>
+                
+                <button onclick="startSubtraction()" class="btn-bounce w-full bg-gradient-to-r from-pink-400 to-rose-500 text-white rounded-2xl p-5 shadow-lg flex items-center gap-4">
+                  <span class="text-5xl">➖</span>
+                  <div class="text-left">
+                    <div class="font-bold text-xl">Subtraction</div>
+                    <div class="text-sm opacity-90">Take some away!</div>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>`;
+      }
+
+      else if (currentGame === 'counting') {
+        let nums = '';
+        const colors = ['from-red-400 to-red-500','from-orange-400 to-orange-500','from-yellow-400 to-yellow-500','from-green-400 to-green-500','from-teal-400 to-teal-500','from-blue-400 to-blue-500','from-indigo-400 to-indigo-500','from-purple-400 to-purple-500','from-pink-400 to-pink-500','from-rose-400 to-rose-500'];
+        for (let i = 1; i <= 50; i++) {
+          const color = colors[i % colors.length];
+          nums += `<button id="num-${i}" onclick="speakNumber(${i})" class="number-btn bg-gradient-to-br ${color} text-white rounded-2xl w-14 h-14 text-xl font-bold shadow-lg">${i}</button>`;
+        }
+        html = `
+          <div class="min-h-screen bg-gradient-to-b from-yellow-300 via-orange-400 to-red-400 p-4 pb-24">
+            <div class="flex items-center justify-between mb-4">
+              <button onclick="goMenu()" class="bg-white/30 text-white rounded-full w-10 h-10 text-xl btn-bounce">←</button>
+              <h1 class="text-2xl font-bold text-white drop-shadow-lg">Count 1-50! 🔢</h1>
+              <div class="w-10"></div>
+            </div>
+            <p class="text-center text-white mb-4 text-lg drop-shadow">👆 Tap any number to hear it!</p>
+            <div class="bg-white/95 rounded-3xl p-4 shadow-2xl">
+              <div class="grid grid-cols-5 gap-3">${nums}</div>
+            </div>
+          </div>`;
+      }
+
+      else if (currentGame === 'addition') {
+        const emojis = ['🍎','🌟','🎈','🍪','🚗','⚽','🦋','🍕'];
+        const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+        html = `
+          <div class="min-h-screen bg-gradient-to-b from-green-400 via-emerald-500 to-teal-600 flex flex-col items-center justify-center p-4">
+            <button onclick="goMenu()" class="absolute top-4 left-4 bg-white/30 text-white rounded-full w-12 h-12 text-2xl btn-bounce">←</button>
+            <div class="absolute top-4 right-4 bg-white/30 text-white rounded-full px-4 py-2 font-bold">⭐ ${score}</div>
+            
+            <div class="bg-white rounded-3xl shadow-2xl p-6 max-w-md w-full text-center">
+              <div class="text-4xl mb-2">➕ Addition!</div>
+              <div class="text-sm text-gray-500 mb-4">Level ${level}</div>
+              
+              <div class="bg-gradient-to-r from-green-100 to-teal-100 rounded-2xl p-4 mb-4">
+                ${createVisualObjects(problem.a, emoji)}
+                <div class="text-3xl my-2">➕</div>
+                ${createVisualObjects(problem.b, emoji, true)}
+              </div>
+              
+              <div class="bg-gray-100 rounded-2xl p-4 mb-6">
+                <span class="text-5xl font-bold text-gray-800">${problem.a} + ${problem.b} = ?</span>
+              </div>
+              
+              <div class="grid grid-cols-3 gap-4">
+                ${problem.options.map(o => `
+                  <button data-val="${o}" onclick="checkAnswer(${o})" class="answer-btn btn-bounce bg-gradient-to-br from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 text-white rounded-2xl p-5 text-4xl font-bold shadow-xl">${o}</button>
+                `).join('')}
+              </div>
+            </div>
+            <div id="confetti" class="fixed inset-0 pointer-events-none overflow-hidden"></div>
+          </div>`;
+      }
+
+      else if (currentGame === 'subtraction') {
+        const emojis = ['🍎','🌟','🎈','🍪','🚗','⚽','🦋','🍕'];
+        const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+        html = `
+          <div class="min-h-screen bg-gradient-to-b from-pink-400 via-rose-500 to-red-500 flex flex-col items-center justify-center p-4">
+            <button onclick="goMenu()" class="absolute top-4 left-4 bg-white/30 text-white rounded-full w-12 h-12 text-2xl btn-bounce">←</button>
+            <div class="absolute top-4 right-4 bg-white/30 text-white rounded-full px-4 py-2 font-bold">⭐ ${score}</div>
+            
+            <div class="bg-white rounded-3xl shadow-2xl p-6 max-w-md w-full text-center">
+              <div class="text-4xl mb-2">➖ Subtraction!</div>
+              <div class="text-sm text-gray-500 mb-4">Level ${level}</div>
+              
+              <div class="bg-gradient-to-r from-pink-100 to-rose-100 rounded-2xl p-4 mb-4">
+                ${createVisualObjects(problem.a, emoji)}
+                <div class="text-2xl my-2 text-gray-600">Take away ${problem.b}</div>
+                <div class="flex flex-wrap justify-center gap-2 opacity-40">
+                  ${emoji.repeat(problem.b).split('').map((e, i) => `<span class="text-4xl crossed-out">${e}</span>`).join('')}
+                </div>
+              </div>
+              
+              <div class="bg-gray-100 rounded-2xl p-4 mb-6">
+                <span class="text-5xl font-bold text-gray-800">${problem.a} - ${problem.b} = ?</span>
+              </div>
+              
+              <div class="grid grid-cols-3 gap-4">
+                ${problem.options.map(o => `
+                  <button data-val="${o}" onclick="checkAnswer(${o})" class="answer-btn btn-bounce bg-gradient-to-br from-pink-400 to-rose-500 hover:from-pink-500 hover:to-rose-600 text-white rounded-2xl p-5 text-4xl font-bold shadow-xl">${o}</button>
+                `).join('')}
+              </div>
+            </div>
+            <div id="confetti" class="fixed inset-0 pointer-events-none overflow-hidden"></div>
+          </div>`;
+      }
+
+      app.innerHTML = html;
+    }
+
+    render();
+  </script>
+</body>
+</html>
