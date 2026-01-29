@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Life Skills - Rian's Learning</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .day-btn { transition: all 0.3s; }
+    .day-btn:active { transform: scale(1.1); }
+    @keyframes fade-in { 0%{opacity:0;transform:scale(0.8)} 100%{opacity:1;transform:scale(1)} }
+    @keyframes bounce-slow { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+    .fade-in { animation: fade-in 0.5s ease-out; }
+    .bounce-slow { animation: bounce-slow 2s ease-in-out infinite; }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-b from-orange-400 to-pink-500">
+  <div id="app"></div>
+
+  <script>
+    let currentGame = 'menu';
+    let currentDay = 0;
+    let quizQuestion = null;
+    let score = 0;
+    let sequenceAnswer = [];
+    let learnComplete = false;
+
+    const days = [
+      { name: 'Sunday', emoji: '☀️', color: 'from-yellow-400 to-orange-500' },
+      { name: 'Monday', emoji: '🌙', color: 'from-gray-400 to-slate-500' },
+      { name: 'Tuesday', emoji: '⭐', color: 'from-red-400 to-rose-500' },
+      { name: 'Wednesday', emoji: '💧', color: 'from-blue-400 to-cyan-500' },
+      { name: 'Thursday', emoji: '⚡', color: 'from-purple-400 to-violet-500' },
+      { name: 'Friday', emoji: '🎉', color: 'from-green-400 to-emerald-500' },
+      { name: 'Saturday', emoji: '🌟', color: 'from-pink-400 to-rose-500' }
+    ];
+
+    function speakSlow(text, rate = 0.4) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text.toLowerCase());
+        u.rate = rate;
+        u.pitch = 1.0;
+        u.lang = 'en-US';
+        window.speechSynthesis.speak(u);
+      }
+    }
+
+    function speakCurrentDay() {
+      const d = days[currentDay];
+      speakSlow(d.name + '. ' + d.name + '.', 0.35);
+    }
+
+    function nextDay() {
+      if (currentDay < 6) {
+        currentDay++;
+        render();
+        setTimeout(speakCurrentDay, 500);
+      } else {
+        learnComplete = true;
+        render();
+        speakSlow('You learned all seven days!', 0.5);
+      }
+    }
+
+    function prevDay() {
+      if (currentDay > 0) {
+        currentDay--;
+        render();
+        setTimeout(speakCurrentDay, 500);
+      }
+    }
+
+    function startLearn() {
+      currentDay = 0;
+      learnComplete = false;
+      currentGame = 'learn';
+      render();
+      setTimeout(speakCurrentDay, 500);
+    }
+
+    function generateQuiz() {
+      const types = ['next', 'before', 'which'];
+      const type = types[Math.floor(Math.random() * types.length)];
+      const dayIndex = Math.floor(Math.random() * 7);
+      
+      if (type === 'next') {
+        const nextIndex = (dayIndex + 1) % 7;
+        quizQuestion = { question: 'What comes AFTER', highlight: days[dayIndex].name + '?', highlightEmoji: days[dayIndex].emoji, answer: nextIndex, options: shuffleOptions(nextIndex) };
+      } else if (type === 'before') {
+        const prevIndex = (dayIndex - 1 + 7) % 7;
+        quizQuestion = { question: 'What comes BEFORE', highlight: days[dayIndex].name + '?', highlightEmoji: days[dayIndex].emoji, answer: prevIndex, options: shuffleOptions(prevIndex) };
+      } else {
+        quizQuestion = { question: 'Which day is this?', highlight: days[dayIndex].emoji, highlightEmoji: '', answer: dayIndex, options: shuffleOptions(dayIndex) };
+      }
+    }
+
+    function shuffleOptions(correctIndex) {
+      const options = [correctIndex];
+      while (options.length < 3) {
+        const rand = Math.floor(Math.random() * 7);
+        if (!options.includes(rand)) options.push(rand);
+      }
+      return options.sort(() => Math.random() - 0.5);
+    }
+
+    function checkQuizAnswer(selected) {
+      if (selected === quizQuestion.answer) {
+        speakSlow('Great job!', 0.7);
+        score++;
+        setTimeout(() => { generateQuiz(); render(); }, 1500);
+      } else {
+        speakSlow('Try again!', 0.7);
+      }
+    }
+
+    function resetSequence() { sequenceAnswer = []; }
+
+    function addToSequence(dayIndex) {
+      if (dayIndex === sequenceAnswer.length) {
+        sequenceAnswer.push(dayIndex);
+        speakSlow(days[dayIndex].name, 0.5);
+        if (sequenceAnswer.length === 7) {
+          setTimeout(() => { speakSlow('Perfect! All seven days!', 0.5); score += 5; }, 500);
+        }
+        render();
+      } else {
+        speakSlow('Start with Sunday!', 0.6);
+        sequenceAnswer = [];
+        render();
+      }
+    }
+
+    function goMenu() { currentGame = 'menu'; render(); }
+    function goDaysMenu() { currentGame = 'days-menu'; render(); }
+    function goQuiz() { generateQuiz(); currentGame = 'quiz'; render(); }
+    function goSequence() { resetSequence(); currentGame = 'sequence'; render(); }
+
+    function render() {
+      const app = document.getElementById('app');
+      let html = '';
+
+      if (currentGame === 'menu') {
+        html = `
+          <div class="min-h-screen flex flex-col items-center justify-center p-4">
+            <a href="index.html" class="absolute top-4 left-4 bg-white/30 text-white rounded-full w-12 h-12 flex items-center justify-center text-2xl btn-bounce no-underline">←</a>
+            <div class="bg-white rounded-3xl shadow-2xl p-6 max-w-sm w-full text-center">
+              <div class="text-6xl mb-3">🌈</div>
+              <h1 class="text-3xl font-bold text-orange-600 mb-2">Life Skills!</h1>
+              <p class="text-gray-500 mb-6">Learn everyday things!</p>
+              <button onclick="goDaysMenu()" class="btn-bounce w-full bg-gradient-to-r from-blue-400 to-purple-500 text-white rounded-2xl p-6 shadow-lg flex items-center gap-4">
+                <span class="text-5xl">📅</span>
+                <div class="text-left">
+                  <div class="font-bold text-xl">Days of the Week</div>
+                  <div class="text-sm opacity-90">Learn all 7 days!</div>
+                </div>
+              </button>
+              <div class="mt-4 text-gray-400 text-sm">More coming soon!</div>
+            </div>
+          </div>`;
+      }
+
+      else if (currentGame === 'days-menu') {
+        html = `
+          <div class="min-h-screen flex flex-col items-center justify-center p-4">
+            <button onclick="goMenu()" class="absolute top-4 left-4 bg-white/30 text-white rounded-full w-12 h-12 flex items-center justify-center text-2xl btn-bounce">←</button>
+            <div class="bg-white rounded-3xl shadow-2xl p-6 max-w-sm w-full text-center">
+              <div class="text-5xl mb-2">📅</div>
+              <h1 class="text-2xl font-bold text-purple-600 mb-4">Days of the Week</h1>
+              <div class="space-y-3">
+                <button onclick="startLearn()" class="btn-bounce w-full bg-gradient-to-r from-yellow-400 to-orange-400 text-white rounded-2xl p-4 shadow-lg flex items-center gap-3">
+                  <span class="text-4xl">👆</span>
+                  <div class="text-left">
+                    <div class="font-bold text-lg">Learn Days</div>
+                    <div class="text-xs opacity-90">One day at a time!</div>
+                  </div>
+                </button>
+                <button onclick="goSequence()" class="btn-bounce w-full bg-gradient-to-r from-blue-400 to-indigo-400 text-white rounded-2xl p-4 shadow-lg flex items-center gap-3">
+                  <span class="text-4xl">🔢</span>
+                  <div class="text-left">
+                    <div class="font-bold text-lg">Put in Order</div>
+                    <div class="text-xs opacity-90">Arrange the days!</div>
+                  </div>
+                </button>
+                <button onclick="goQuiz()" class="btn-bounce w-full bg-gradient-to-r from-pink-400 to-rose-400 text-white rounded-2xl p-4 shadow-lg flex items-center gap-3">
+                  <span class="text-4xl">❓</span>
+                  <div class="text-left">
+                    <div class="font-bold text-lg">Quiz Time!</div>
+                    <div class="text-xs opacity-90">Test yourself!</div>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>`;
+      }
+
+      else if (currentGame === 'learn') {
+        if (learnComplete) {
+          html = `
+            <div class="min-h-screen bg-gradient-to-b from-green-400 to-emerald-500 flex flex-col items-center justify-center p-4">
+              <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center fade-in">
+                <div class="text-6xl mb-4">🎉</div>
+                <h1 class="text-2xl font-bold text-green-600 mb-2">Amazing!</h1>
+                <p class="text-gray-600 mb-6">You learned all 7 days!</p>
+                <div class="flex justify-center gap-2 mb-6">
+                  ${days.map(d => '<span class="text-2xl">' + d.emoji + '</span>').join('')}
+                </div>
+                <div class="space-y-3">
+                  <button onclick="startLearn()" class="btn-bounce w-full bg-gradient-to-r from-blue-400 to-blue-500 text-white rounded-2xl p-4 font-bold">Learn Again</button>
+                  <button onclick="goDaysMenu()" class="btn-bounce w-full bg-gray-200 text-gray-700 rounded-2xl p-4 font-bold">Back to Menu</button>
+                </div>
+              </div>
+            </div>`;
+        } else {
+          const d = days[currentDay];
+          const progressDots = days.map((_, i) => '<div class="w-3 h-3 rounded-full ' + (i === currentDay ? 'bg-white scale-125' : i < currentDay ? 'bg-white/80' : 'bg-white/30') + '"></div>').join('');
+
+          html = `
+            <div class="min-h-screen bg-gradient-to-b ${d.color} flex flex-col p-4">
+              <div class="flex items-center justify-between mb-2">
+                <button onclick="goDaysMenu()" class="bg-white/30 text-white rounded-full w-10 h-10 text-xl btn-bounce">←</button>
+                <div class="text-white font-bold">Day ${currentDay + 1} of 7</div>
+                <div class="w-10"></div>
+              </div>
+              <div class="flex justify-center gap-2 mb-4">${progressDots}</div>
+              <div class="flex-1 flex flex-col items-center justify-center">
+                <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center fade-in">
+                  <div class="text-8xl mb-6 bounce-slow">${d.emoji}</div>
+                  <h1 class="text-5xl font-bold text-gray-800 mb-8">${d.name}</h1>
+                  <button onclick="speakCurrentDay()" class="btn-bounce bg-gradient-to-r ${d.color} text-white rounded-full py-5 px-10 font-bold text-2xl shadow-lg flex items-center gap-3 mx-auto">
+                    <span class="text-3xl">🔊</span> Hear It
+                  </button>
+                </div>
+              </div>
+              <div class="flex justify-between items-center mt-4 px-4">
+                <button onclick="prevDay()" class="btn-bounce bg-white/90 rounded-full w-16 h-16 text-3xl shadow-lg flex items-center justify-center ${currentDay === 0 ? 'opacity-30' : ''}" ${currentDay === 0 ? 'disabled' : ''}>⬅️</button>
+                <button onclick="nextDay()" class="btn-bounce bg-white rounded-full w-20 h-20 text-3xl shadow-xl flex items-center justify-center font-bold">${currentDay === 6 ? '✅' : '➡️'}</button>
+                <div class="w-16"></div>
+              </div>
+            </div>`;
+        }
+      }
+
+      else if (currentGame === 'sequence') {
+        const dayButtons = days.map((d, i) => {
+          const done = sequenceAnswer.includes(i);
+          return '<button onclick="addToSequence(' + i + ')" class="day-btn bg-gradient-to-br ' + (done ? 'from-gray-300 to-gray-400' : d.color) + ' text-white rounded-2xl p-3 shadow-lg text-center ' + (done ? 'opacity-40' : '') + '" ' + (done ? 'disabled' : '') + '><div class="text-3xl">' + d.emoji + '</div><div class="font-bold text-sm">' + d.name + '</div></button>';
+        }).join('');
+
+        const progressSlots = days.map((d, i) => {
+          const filled = sequenceAnswer.length > i;
+          const filledDay = filled ? days[sequenceAnswer[i]] : null;
+          return '<div class="w-12 h-14 rounded-xl ' + (filled ? 'bg-gradient-to-br ' + filledDay.color : 'bg-white/30') + ' flex flex-col items-center justify-center shadow-md">' + (filled ? '<span class="text-xl">' + filledDay.emoji + '</span>' : '<span class="text-white/50 text-xs">' + (i + 1) + '</span>') + '</div>';
+        }).join('');
+
+        html = `
+          <div class="min-h-screen bg-gradient-to-b from-indigo-400 to-purple-600 p-4">
+            <div class="flex items-center justify-between mb-4">
+              <button onclick="goDaysMenu()" class="bg-white/30 text-white rounded-full w-10 h-10 text-xl btn-bounce">←</button>
+              <h1 class="text-xl font-bold text-white">Put in Order! 🔢</h1>
+              <div class="w-10"></div>
+            </div>
+            <div class="bg-white/20 rounded-2xl p-4 mb-4">
+              <p class="text-white text-center mb-3 text-sm">Tap days in order: Sunday first!</p>
+              <div class="flex justify-center gap-1">${progressSlots}</div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">${dayButtons}</div>
+            ${sequenceAnswer.length === 7 ? '<div class="mt-4 bg-green-500 rounded-2xl p-4 text-white text-center fade-in"><p class="text-2xl font-bold mb-2">🎉 Perfect!</p><button onclick="resetSequence();render()" class="bg-white text-green-600 rounded-full px-6 py-2 font-bold">Play Again</button></div>' : ''}
+          </div>`;
+      }
+
+      else if (currentGame === 'quiz') {
+        const optionButtons = quizQuestion.options.map(i => '<button onclick="checkQuizAnswer(' + i + ')" class="btn-bounce bg-gradient-to-br ' + days[i].color + ' text-white rounded-2xl p-4 shadow-lg text-center"><div class="text-4xl mb-1">' + days[i].emoji + '</div><div class="font-bold text-lg">' + days[i].name + '</div></button>').join('');
+
+        html = `
+          <div class="min-h-screen bg-gradient-to-b from-pink-400 to-rose-500 flex flex-col items-center justify-center p-4">
+            <button onclick="goDaysMenu()" class="absolute top-4 left-4 bg-white/30 text-white rounded-full w-10 h-10 text-xl btn-bounce">←</button>
+            <div class="absolute top-4 right-4 bg-white/30 text-white rounded-full px-4 py-2 font-bold">⭐ ${score}</div>
+            <div class="bg-white rounded-3xl shadow-2xl p-6 max-w-sm w-full text-center fade-in">
+              <div class="text-4xl mb-3">🤔</div>
+              <h2 class="text-xl text-gray-600 mb-1">${quizQuestion.question}</h2>
+              <div class="text-3xl font-bold text-gray-800 mb-6">${quizQuestion.highlightEmoji} ${quizQuestion.highlight}</div>
+              <div class="grid grid-cols-1 gap-3">${optionButtons}</div>
+            </div>
+          </div>`;
+      }
+
+      app.innerHTML = html;
+    }
+
+    render();
+  </script>
+</body>
+</html>
