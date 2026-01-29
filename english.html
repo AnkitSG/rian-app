@@ -6,45 +6,340 @@
   <title>English Fun! - Rian's Learning</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    .letter-btn:active { transform: scale(1.2); }
+    .word-part { transition: all 0.3s; }
+    .word-part.highlight { transform: scale(1.2); color: #8b5cf6; }
+  </style>
 </head>
 <body class="min-h-screen bg-gradient-to-b from-green-400 to-emerald-600">
-  <div class="min-h-screen flex flex-col items-center justify-center p-4">
-    <a href="index.html" class="absolute top-4 left-4 bg-white/30 text-white rounded-full w-12 h-12 flex items-center justify-center text-2xl btn-bounce no-underline">←</a>
+  <div id="app"></div>
+
+  <script>
+    let currentGame = 'menu';
+    let currentBook = 0;
+    let currentPage = 0;
+    let phonicsMode = 'all'; // 'all' or specific letter
+
+    // Phonics data - letter sounds (not names!)
+    const phonics = {
+      'A': { sound: 'ah', word: 'Apple', emoji: '🍎', example: 'a a apple' },
+      'B': { sound: 'buh', word: 'Ball', emoji: '⚽', example: 'b b ball' },
+      'C': { sound: 'kuh', word: 'Cat', emoji: '🐱', example: 'c c cat' },
+      'D': { sound: 'duh', word: 'Dog', emoji: '🐕', example: 'd d dog' },
+      'E': { sound: 'eh', word: 'Egg', emoji: '🥚', example: 'e e egg' },
+      'F': { sound: 'fff', word: 'Fish', emoji: '🐟', example: 'f f fish' },
+      'G': { sound: 'guh', word: 'Goat', emoji: '🐐', example: 'g g goat' },
+      'H': { sound: 'huh', word: 'Hat', emoji: '🎩', example: 'h h hat' },
+      'I': { sound: 'ih', word: 'Igloo', emoji: '🏠', example: 'i i igloo' },
+      'J': { sound: 'juh', word: 'Jam', emoji: '🍯', example: 'j j jam' },
+      'K': { sound: 'kuh', word: 'Kite', emoji: '🪁', example: 'k k kite' },
+      'L': { sound: 'lll', word: 'Lion', emoji: '🦁', example: 'l l lion' },
+      'M': { sound: 'mmm', word: 'Moon', emoji: '🌙', example: 'm m moon' },
+      'N': { sound: 'nnn', word: 'Nest', emoji: '🪺', example: 'n n nest' },
+      'O': { sound: 'oh', word: 'Orange', emoji: '🍊', example: 'o o orange' },
+      'P': { sound: 'puh', word: 'Pig', emoji: '🐷', example: 'p p pig' },
+      'Q': { sound: 'kwuh', word: 'Queen', emoji: '👸', example: 'q q queen' },
+      'R': { sound: 'rrr', word: 'Rain', emoji: '🌧️', example: 'r r rain' },
+      'S': { sound: 'sss', word: 'Sun', emoji: '☀️', example: 's s sun' },
+      'T': { sound: 'tuh', word: 'Tree', emoji: '🌳', example: 't t tree' },
+      'U': { sound: 'uh', word: 'Umbrella', emoji: '☂️', example: 'u u umbrella' },
+      'V': { sound: 'vvv', word: 'Van', emoji: '🚐', example: 'v v van' },
+      'W': { sound: 'wuh', word: 'Water', emoji: '💧', example: 'w w water' },
+      'X': { sound: 'ks', word: 'Box', emoji: '📦', example: 'x x box' },
+      'Y': { sound: 'yuh', word: 'Yellow', emoji: '💛', example: 'y y yellow' },
+      'Z': { sound: 'zzz', word: 'Zebra', emoji: '🦓', example: 'z z zebra' }
+    };
+
+    // Bob Books style - Level 1 books
+    const books = [
+      {
+        title: "Mat",
+        cover: "🧒",
+        pages: [
+          { text: "Mat", image: "🧒", words: ["Mat"] },
+          { text: "Mat sat.", image: "🧒🪑", words: ["Mat", "sat"] },
+          { text: "Sam", image: "👦", words: ["Sam"] },
+          { text: "Sam sat.", image: "👦🪑", words: ["Sam", "sat"] },
+          { text: "Mat sat. Sam sat.", image: "🧒👦🪑", words: ["Mat", "sat", "Sam", "sat"] }
+        ]
+      },
+      {
+        title: "Sam and Mat",
+        cover: "👦🧒",
+        pages: [
+          { text: "Sam and Mat.", image: "👦🧒", words: ["Sam", "and", "Mat"] },
+          { text: "Sam ran.", image: "👦💨", words: ["Sam", "ran"] },
+          { text: "Mat ran.", image: "🧒💨", words: ["Mat", "ran"] },
+          { text: "Sam and Mat ran.", image: "👦🧒💨", words: ["Sam", "and", "Mat", "ran"] },
+          { text: "Sam and Mat sat.", image: "👦🧒🪑", words: ["Sam", "and", "Mat", "sat"] }
+        ]
+      },
+      {
+        title: "The Cat",
+        cover: "🐱",
+        pages: [
+          { text: "A cat.", image: "🐱", words: ["A", "cat"] },
+          { text: "A fat cat.", image: "🐱", words: ["A", "fat", "cat"] },
+          { text: "The cat sat.", image: "🐱🪑", words: ["The", "cat", "sat"] },
+          { text: "The cat sat on a mat.", image: "🐱🟫", words: ["The", "cat", "sat", "on", "a", "mat"] },
+          { text: "The fat cat sat on a mat.", image: "🐱🟫", words: ["The", "fat", "cat", "sat", "on", "a", "mat"] }
+        ]
+      },
+      {
+        title: "The Hat",
+        cover: "🎩",
+        pages: [
+          { text: "A hat.", image: "🎩", words: ["A", "hat"] },
+          { text: "Sam has a hat.", image: "👦🎩", words: ["Sam", "has", "a", "hat"] },
+          { text: "Mat has a hat.", image: "🧒🎩", words: ["Mat", "has", "a", "hat"] },
+          { text: "The cat has a hat!", image: "🐱🎩", words: ["The", "cat", "has", "a", "hat"] },
+          { text: "Sam and Mat and the cat. All have hats!", image: "👦🧒🐱🎩", words: ["Sam", "and", "Mat", "and", "the", "cat", "All", "have", "hats"] }
+        ]
+      }
+    ];
+
+    // Speak function with phonics support
+    function speak(text, rate = 0.8) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.rate = rate;
+        u.pitch = 1.0;
+        u.lang = 'en-US';
+        window.speechSynthesis.speak(u);
+      }
+    }
+
+    // Speak letter sound - SLOW and CLEAR for toddlers
+    function speakLetter(letter) {
+      const data = phonics[letter];
+      if (data) {
+        const btn = document.getElementById('letter-' + letter);
+        
+        // Step 1: Say the letter sound slowly
+        speakSlow(data.sound, 0.5);
+        
+        // Step 2: Pause, then say sound again
+        setTimeout(() => {
+          speakSlow(data.sound, 0.5);
+        }, 1000);
+        
+        // Step 3: Pause, then say the word
+        setTimeout(() => {
+          speakSlow(data.word, 0.55);
+        }, 2000);
+        
+        // Animate the letter
+        if (btn) {
+          btn.classList.add('pop');
+          setTimeout(() => btn.classList.remove('pop'), 400);
+        }
+      }
+    }
     
-    <div class="bg-white rounded-3xl shadow-2xl p-6 max-w-sm w-full text-center">
-      <div class="text-6xl mb-3">📚</div>
-      <h1 class="text-3xl font-bold text-green-600 mb-2">English Fun!</h1>
-      <p class="text-gray-500 mb-6">Reading adventures coming soon!</p>
+    // Extra slow speech for toddlers
+    function speakSlow(text, rate = 0.5) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.rate = rate;  // Very slow
+        u.pitch = 1.0;
+        u.lang = 'en-US';
+        window.speechSynthesis.speak(u);
+      }
+    }
+
+    // Speak word slowly (for reading) - TODDLER SPEED
+    function speakWord(word) {
+      speakSlow(word, 0.45);
+    }
+
+    // Read word by word with highlighting - SLOW with long pauses
+    function readAloud() {
+      const page = books[currentBook].pages[currentPage];
+      const words = page.text.split(' ');
+      let i = 0;
       
-      <div class="space-y-4 opacity-60">
-        <div class="w-full bg-gradient-to-r from-purple-400 to-purple-500 text-white rounded-2xl p-5 flex items-center gap-4">
-          <span class="text-5xl">🔤</span>
-          <div class="text-left">
-            <div class="font-bold text-xl">Letter Sounds</div>
-            <div class="text-sm opacity-90">Coming soon!</div>
-          </div>
-        </div>
+      function sayNext() {
+        if (i >= words.length) {
+          // Clear highlights at end
+          document.querySelectorAll('.word-span').forEach(el => el.classList.remove('highlight'));
+          return;
+        }
         
-        <div class="w-full bg-gradient-to-r from-blue-400 to-blue-500 text-white rounded-2xl p-5 flex items-center gap-4">
-          <span class="text-5xl">📖</span>
-          <div class="text-left">
-            <div class="font-bold text-xl">Simple Words</div>
-            <div class="text-sm opacity-90">Coming soon!</div>
-          </div>
-        </div>
+        // Highlight current word
+        document.querySelectorAll('.word-span').forEach((el, idx) => {
+          el.classList.toggle('highlight', idx === i);
+        });
         
-        <div class="w-full bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-2xl p-5 flex items-center gap-4">
-          <span class="text-5xl">📚</span>
-          <div class="text-left">
-            <div class="font-bold text-xl">Read Along</div>
-            <div class="text-sm opacity-90">Coming soon!</div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="mt-6 text-6xl">🚧</div>
-      <p class="text-gray-500 mt-2">We're building something amazing!</p>
-    </div>
-  </div>
+        speakSlow(words[i].replace(/[.,!]/g, ''), 0.45);
+        i++;
+        // Long pause between words for toddler comprehension
+        setTimeout(sayNext, 1200);
+      }
+      sayNext();
+    }
+
+    // Navigation
+    function goMenu() { currentGame = 'menu'; render(); }
+    function goPhonics() { currentGame = 'phonics'; render(); }
+    function goBooks() { currentGame = 'books'; render(); }
+    function openBook(idx) { currentBook = idx; currentPage = 0; currentGame = 'reading'; render(); }
+    function nextPage() { 
+      if (currentPage < books[currentBook].pages.length - 1) {
+        currentPage++; 
+        render();
+      }
+    }
+    function prevPage() {
+      if (currentPage > 0) {
+        currentPage--;
+        render();
+      }
+    }
+
+    function render() {
+      const app = document.getElementById('app');
+      let html = '';
+
+      if (currentGame === 'menu') {
+        html = `
+          <div class="min-h-screen flex flex-col items-center justify-center p-4">
+            <a href="index.html" class="absolute top-4 left-4 bg-white/30 text-white rounded-full w-12 h-12 flex items-center justify-center text-2xl btn-bounce no-underline">←</a>
+            
+            <div class="bg-white rounded-3xl shadow-2xl p-6 max-w-sm w-full text-center">
+              <div class="text-6xl mb-3">📚</div>
+              <h1 class="text-3xl font-bold text-green-600 mb-2">English Fun!</h1>
+              <p class="text-gray-500 mb-6">Learn to read with Rian!</p>
+              
+              <div class="space-y-4">
+                <button onclick="goPhonics()" class="btn-bounce w-full bg-gradient-to-r from-purple-400 to-purple-600 text-white rounded-2xl p-5 shadow-lg flex items-center gap-4">
+                  <span class="text-5xl">🔤</span>
+                  <div class="text-left">
+                    <div class="font-bold text-xl">Letter Sounds</div>
+                    <div class="text-sm opacity-90">A-Z Phonics</div>
+                  </div>
+                </button>
+                
+                <button onclick="goBooks()" class="btn-bounce w-full bg-gradient-to-r from-blue-400 to-blue-600 text-white rounded-2xl p-5 shadow-lg flex items-center gap-4">
+                  <span class="text-5xl">📖</span>
+                  <div class="text-left">
+                    <div class="font-bold text-xl">Read Books</div>
+                    <div class="text-sm opacity-90">Easy stories for beginners</div>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>`;
+      }
+
+      else if (currentGame === 'phonics') {
+        const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+        const colors = ['bg-red-400','bg-orange-400','bg-yellow-400','bg-green-400','bg-teal-400','bg-blue-400','bg-indigo-400','bg-purple-400','bg-pink-400'];
+        
+        let letterBtns = letters.map((l, i) => {
+          const color = colors[i % colors.length];
+          const data = phonics[l];
+          return `
+            <button id="letter-${l}" onclick="speakLetter('${l}')" class="letter-btn ${color} text-white rounded-2xl p-2 shadow-lg flex flex-col items-center justify-center aspect-square">
+              <span class="text-2xl font-bold">${l}</span>
+              <span class="text-lg">${data.emoji}</span>
+            </button>`;
+        }).join('');
+
+        html = `
+          <div class="min-h-screen bg-gradient-to-b from-purple-400 via-purple-500 to-indigo-600 p-4 pb-20">
+            <div class="flex items-center justify-between mb-4">
+              <button onclick="goMenu()" class="bg-white/30 text-white rounded-full w-10 h-10 text-xl btn-bounce">←</button>
+              <h1 class="text-2xl font-bold text-white drop-shadow-lg">Letter Sounds 🔤</h1>
+              <div class="w-10"></div>
+            </div>
+            <p class="text-center text-white mb-4 text-lg">👆 Tap a letter to hear its sound!</p>
+            <div class="bg-white/95 rounded-3xl p-4 shadow-2xl">
+              <div class="grid grid-cols-5 gap-2">${letterBtns}</div>
+            </div>
+            <div class="mt-4 bg-white/20 rounded-2xl p-4 text-center text-white">
+              <p class="text-sm">💡 Tip: Letters make SOUNDS, not names!</p>
+              <p class="text-sm">"B" says "buh" not "bee"</p>
+            </div>
+          </div>`;
+      }
+
+      else if (currentGame === 'books') {
+        let bookCards = books.map((book, i) => `
+          <button onclick="openBook(${i})" class="btn-bounce bg-white rounded-2xl p-4 shadow-lg text-center">
+            <div class="text-5xl mb-2">${book.cover}</div>
+            <div class="font-bold text-gray-800">${book.title}</div>
+            <div class="text-xs text-gray-500">Book ${i + 1}</div>
+          </button>
+        `).join('');
+
+        html = `
+          <div class="min-h-screen bg-gradient-to-b from-blue-400 via-blue-500 to-indigo-600 p-4">
+            <div class="flex items-center justify-between mb-4">
+              <button onclick="goMenu()" class="bg-white/30 text-white rounded-full w-10 h-10 text-xl btn-bounce">←</button>
+              <h1 class="text-2xl font-bold text-white drop-shadow-lg">My Books 📚</h1>
+              <div class="w-10"></div>
+            </div>
+            <p class="text-center text-white mb-6 text-lg">Pick a book to read!</p>
+            <div class="grid grid-cols-2 gap-4">${bookCards}</div>
+            <div class="mt-6 bg-white/20 rounded-2xl p-4 text-center text-white">
+              <p class="text-sm">📖 Start with Book 1 and work your way up!</p>
+            </div>
+          </div>`;
+      }
+
+      else if (currentGame === 'reading') {
+        const book = books[currentBook];
+        const page = book.pages[currentPage];
+        const totalPages = book.pages.length;
+        
+        // Create clickable words
+        const wordSpans = page.text.split(' ').map((word, i) => 
+          `<span class="word-span cursor-pointer hover:text-purple-600 transition-all" onclick="speakWord('${word.replace(/[.,!]/g, '')}')">${word}</span>`
+        ).join(' ');
+
+        html = `
+          <div class="min-h-screen bg-gradient-to-b from-amber-100 via-orange-100 to-yellow-100 p-4 flex flex-col">
+            <div class="flex items-center justify-between mb-4">
+              <button onclick="goBooks()" class="bg-gray-200 text-gray-700 rounded-full w-10 h-10 text-xl btn-bounce">←</button>
+              <h1 class="text-lg font-bold text-gray-700">${book.title}</h1>
+              <div class="text-sm text-gray-500">${currentPage + 1}/${totalPages}</div>
+            </div>
+            
+            <div class="flex-1 bg-white rounded-3xl shadow-2xl p-6 flex flex-col">
+              <!-- Image area -->
+              <div class="flex-1 flex items-center justify-center text-8xl mb-4 min-h-32">
+                ${page.image}
+              </div>
+              
+              <!-- Text area -->
+              <div class="bg-gray-50 rounded-2xl p-6 mb-4">
+                <p class="text-3xl font-bold text-center text-gray-800 leading-relaxed">${wordSpans}</p>
+              </div>
+              
+              <!-- Read aloud button -->
+              <button onclick="readAloud()" class="btn-bounce bg-gradient-to-r from-green-400 to-emerald-500 text-white rounded-full py-3 px-6 font-bold text-lg shadow-lg mx-auto flex items-center gap-2">
+                <span>🔊</span> Read to Me
+              </button>
+            </div>
+            
+            <!-- Navigation -->
+            <div class="flex justify-between mt-4">
+              <button onclick="prevPage()" class="btn-bounce bg-white rounded-full w-14 h-14 text-2xl shadow-lg ${currentPage === 0 ? 'opacity-30' : ''}" ${currentPage === 0 ? 'disabled' : ''}>⬅️</button>
+              <div class="flex gap-2 items-center">
+                ${Array(totalPages).fill(0).map((_, i) => `<div class="w-3 h-3 rounded-full ${i === currentPage ? 'bg-orange-400' : 'bg-gray-300'}"></div>`).join('')}
+              </div>
+              <button onclick="nextPage()" class="btn-bounce bg-white rounded-full w-14 h-14 text-2xl shadow-lg ${currentPage === totalPages - 1 ? 'opacity-30' : ''}" ${currentPage === totalPages - 1 ? 'disabled' : ''}>➡️</button>
+            </div>
+          </div>`;
+      }
+
+      app.innerHTML = html;
+    }
+
+    render();
+  </script>
 </body>
 </html>
